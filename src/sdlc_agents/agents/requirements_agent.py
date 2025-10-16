@@ -89,9 +89,17 @@ Provide:
 5. **UI Changes**: Frontend modifications needed
 6. **Test Scenarios**: How to verify the implementation
 7. **Ambiguities**: Unclear points that need clarification
-8. **Risks**: Potential implementation challenges
+8. **Assumptions Made**: Explicitly list ALL assumptions you're making due to missing information
+9. **Missing Information**: What critical details are not provided that should be clarified
+10. **Risks**: Potential implementation challenges
 
-Be specific and actionable."""
+**Critical Instructions:**
+- For ANY missing information, explicitly list what assumptions you're making
+- Do NOT make silent assumptions - document every assumption clearly
+- If acceptance criteria are incomplete, specify exactly what's missing
+- Highlight any edge cases not covered by the requirements
+
+Be specific and actionable. When information is incomplete, explicitly state what clarifications are needed before implementation can proceed safely."""
 
         response = await self.think(analysis_prompt)
 

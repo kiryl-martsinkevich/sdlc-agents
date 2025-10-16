@@ -144,7 +144,14 @@ Provide:
 3. Test cases to add
 4. Maven dependencies if needed
 
-Be specific with file paths and code snippets."""
+**Important Guidelines:**
+- If you identify conflicting requirements, explicitly flag them and suggest resolution approaches
+- For any missing or ambiguous information, list the assumptions you're making
+- If requirements are incomplete, specify what clarifications are needed before implementation
+- Highlight any potential risks or edge cases that aren't addressed in requirements
+
+Be specific with file paths and code snippets. If you encounter conflicts or ambiguities,
+do NOT proceed with assumptions - clearly state the issues and ask for clarification."""
 
         response = await self.think(impl_prompt)
 

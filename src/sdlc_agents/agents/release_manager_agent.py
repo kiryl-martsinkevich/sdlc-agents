@@ -192,24 +192,55 @@ Be thorough, cautious, and ensure release quality."""
         # 3. Categorize changes (features, bugs, breaking changes)
 
         # Use LLM to generate notes
-        notes_prompt = f"""Generate release notes for these components:
+        from datetime import datetime
+        release_date = datetime.now().strftime('%Y-%m-%d')
 
-**Components:** {', '.join(components)}
-**Source Branch:** {source_branch}
+        notes_prompt = f"""Generate release notes in the following EXACT markdown format:
+
+# Release Notes
+
+**Release Date**: {release_date}
+**Components**: {', '.join(components)}
+**Source Branch**: {source_branch}
+
+## 🎉 New Features
+- [Feature name](work-item-link): Brief description of what was added
+- [Another feature](work-item-link): Brief description
+
+## 🐛 Bug Fixes
+- [Bug name](work-item-link): Brief description of what was fixed
+- [Another bug](work-item-link): Brief description
+
+## 🔧 Improvements
+- [Improvement](work-item-link): Brief description of enhancement
+- [Another improvement](work-item-link): Brief description
+
+## ⚠️ Breaking Changes
+- [Breaking change](work-item-link): Description and migration guide
+- If no breaking changes, write "None"
+
+## 📝 Known Issues
+- [Issue description]: Workaround if available
+- If no known issues, write "None"
+
+## 📦 Deployment Notes
+- Any special deployment steps or configuration changes required
+- If none, write "Standard deployment process"
+
+**IMPORTANT**:
+- Use the exact format above with proper markdown headings and emoji
+- Each item should be a bullet point starting with a dash (-)
+- Include work item links in square brackets when applicable
+- Keep descriptions brief (1-2 sentences maximum)
+- If a section has no items, write "None" instead of omitting the section
 
 In a real scenario, we would provide:
-- List of merged PRs
-- Closed work items
-- Commit history
+- List of merged PRs since last release
+- Closed work items with details
+- Full commit history
+- Test coverage changes
 
-Generate structured release notes with sections:
-1. New Features
-2. Bug Fixes
-3. Improvements
-4. Breaking Changes (if any)
-5. Known Issues
-
-Format in markdown."""
+For this demonstration, generate sample items that follow the format above."""
 
         response = await self.think(notes_prompt)
 

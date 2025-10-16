@@ -135,7 +135,7 @@ Be proactive in keeping builds green and identifying problematic patterns."""
         build_logs = task.get("build_logs", "Build logs would be fetched here")
 
         # Analyze with LLM
-        analysis_prompt = f"""Analyze this build failure:
+        analysis_prompt = f"""Analyze this build failure and respond with a JSON object:
 
 **Build ID:** {build_id}
 **Build Number:** {build['build_number']}
@@ -145,29 +145,62 @@ Be proactive in keeping builds green and identifying problematic patterns."""
 **Logs Preview:**
 {build_logs[:1000]}
 
-Determine:
-1. **Failure Type**: Compilation error, test failure, infrastructure issue, or intermittent failure
-2. **Is Intermittent**: Is this likely an intermittent failure (network, timing, flaky test)?
-3. **Root Cause**: What is the underlying issue?
-4. **Affected Components**: Which parts of the codebase are affected?
-5. **Recommended Action**: Retry build or fix code?
-6. **Fix Suggestions**: Specific code changes needed if applicable
+Analyze the failure and respond ONLY with a JSON object in this exact format:
+{{
+  "failure_type": "compilation_error|test_failure|infrastructure_issue|intermittent_failure",
+  "is_intermittent": true|false,
+  "confidence": 0.0-1.0,
+  "root_cause": "Brief description of the underlying issue",
+  "affected_components": ["component1", "component2"],
+  "recommended_action": "retry|fix_code|infrastructure_fix",
+  "fix_suggestions": ["Specific suggestion 1", "Specific suggestion 2"],
+  "reasoning": "Brief explanation of your analysis"
+}}
 
-Be specific and actionable."""
+Be specific and actionable. Focus on:
+- Compilation errors, test failures, and infrastructure issues
+- Network timeouts, race conditions, and flaky tests indicate intermittent failures
+- Provide concrete fix suggestions when recommending code fixes"""
 
-        response = await self.think(analysis_prompt)
+        response = await self.think(analysis_prompt, temperature=0.3)
 
-        # Parse response to determine if intermittent
-        is_intermittent = "intermittent" in response.content.lower() or "flaky" in response.content.lower()
+        # Parse JSON response
+        import json
+        import re
+
+        # Extract JSON from response (handle markdown code blocks)
+        content = response.content
+        json_match = re.search(r'\{.*\}', content, re.DOTALL)
+
+        if json_match:
+            try:
+                analysis_result = json.loads(json_match.group())
+                is_intermittent = analysis_result.get("is_intermittent", False)
+                failure_type = analysis_result.get("failure_type", "unknown")
+            except json.JSONDecodeError:
+                # Fallback to keyword matching if JSON parsing fails
+                logger.warning(f"Failed to parse JSON from LLM response for build {build_id}")
+                is_intermittent = "intermittent" in content.lower() or "flaky" in content.lower()
+                failure_type = "unknown"
+                analysis_result = {"raw_response": content}
+        else:
+            # Fallback to keyword matching
+            logger.warning(f"No JSON found in LLM response for build {build_id}")
+            is_intermittent = "intermittent" in content.lower() or "flaky" in content.lower()
+            failure_type = "unknown"
+            analysis_result = {"raw_response": content}
 
         result = {
             "success": True,
             "build_id": build_id,
-            "analysis": response.content,
+            "analysis": analysis_result,
             "is_intermittent": is_intermittent,
+            "failure_type": failure_type,
         }
 
-        await self.record_result(f"Analyzed build {build_id}: intermittent={is_intermittent}")
+        await self.record_result(
+            f"Analyzed build {build_id}: type={failure_type}, intermittent={is_intermittent}"
+        )
 
         return result
 
