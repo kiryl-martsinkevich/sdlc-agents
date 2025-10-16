@@ -1,0 +1,53 @@
+# Repository Configuration for SDLC Agents
+# Copy this file to repositories.yaml and customize for your project
+
+repositories:
+  # Backend API service
+  - name: backend-api
+    url: https://dev.azure.com/your-org/your-project/_git/backend-api
+    ado_repo_id: "12345678-1234-1234-1234-123456789abc"
+    build_definition: "Backend-CI"
+    description: "Main backend API service"
+    enabled: true
+
+  # Frontend web application
+  - name: frontend-web
+    url: https://dev.azure.com/your-org/your-project/_git/frontend-web
+    ado_repo_id: "87654321-4321-4321-4321-cba987654321"
+    build_definition: "Frontend-CI"
+    description: "React frontend application"
+    enabled: true
+
+  # Shared libraries
+  - name: shared-lib
+    url: https://dev.azure.com/your-org/your-project/_git/shared-lib
+    ado_repo_id: "11111111-2222-3333-4444-555555555555"
+    build_definition: "Shared-CI"
+    description: "Common utilities and libraries"
+    enabled: true
+
+  # Mobile app (disabled example)
+  - name: mobile-app
+    url: https://dev.azure.com/your-org/your-project/_git/mobile-app
+    ado_repo_id: "99999999-8888-7777-6666-555555555555"
+    build_definition: "Mobile-CI"
+    description: "Mobile application"
+    enabled: false  # Set to true to enable
+
+# Component groups for releases
+component_groups:
+  # Full stack deployment
+  full_stack:
+    - backend-api
+    - frontend-web
+
+  # Backend only
+  backend:
+    - backend-api
+    - shared-lib
+
+  # All components
+  all:
+    - backend-api
+    - frontend-web
+    - shared-lib
