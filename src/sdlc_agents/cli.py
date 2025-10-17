@@ -63,9 +63,15 @@ class SDLCAgentSystem:
 
         # Create code agents for each repository
         for repo in repo_list:
+            # Extract local_path if provided
+            local_path = None
+            if "local_path" in repo and repo["local_path"]:
+                local_path = Path(repo["local_path"]).expanduser()
+
             code_agent = CodeRepositoryAgent(
                 repo_name=repo["name"],
                 repo_url=repo["url"],
+                repo_path=local_path,
             )
             await code_agent.initialize_repo()
             self.code_agents[repo["name"]] = code_agent
@@ -88,7 +94,12 @@ class SDLCAgentSystem:
                 )
                 return []
 
-            repo_list = [{"name": repo.name, "url": repo.url} for repo in enabled_repos]
+            repo_list = []
+            for repo in enabled_repos:
+                repo_dict = {"name": repo.name, "url": repo.url}
+                if repo.local_path:
+                    repo_dict["local_path"] = repo.local_path
+                repo_list.append(repo_dict)
 
             console.print(f"[green]Loaded {len(repo_list)} repositories from config[/green]")
             return repo_list
@@ -429,14 +440,17 @@ def list_repos(config):
         table = Table(title="Configured Repositories")
         table.add_column("Name", style="cyan")
         table.add_column("Status", style="green")
+        table.add_column("Local Path", style="yellow")
         table.add_column("Build Definition")
         table.add_column("Description")
 
         for repo in config_obj.repositories:
             status = "✓ Enabled" if repo.enabled else "✗ Disabled"
+            local_path_display = repo.local_path if repo.local_path else "-"
             table.add_row(
                 repo.name,
                 status,
+                local_path_display,
                 repo.build_definition or "-",
                 repo.description or "-",
             )
@@ -459,13 +473,14 @@ def list_repos(config):
 @click.option("--ado-id", help="Azure DevOps repository ID")
 @click.option("--build-def", help="Build definition name")
 @click.option("--description", "-d", default="", help="Repository description")
+@click.option("--local-path", "-l", help="Local filesystem path where repository is checked out")
 @click.option(
     "--config",
     "-c",
     type=click.Path(),
     help="Path to repositories.yaml file",
 )
-def add_repo(name, url, ado_id, build_def, description, config):
+def add_repo(name, url, ado_id, build_def, description, local_path, config):
     """Add a repository to configuration."""
     if config:
         repo_config_manager.config_path = Path(config)
@@ -479,9 +494,15 @@ def add_repo(name, url, ado_id, build_def, description, config):
             description=description,
         )
 
+        # Set local_path if provided
+        if local_path:
+            repo.local_path = local_path
+
         repo_config_manager.save()
 
         console.print(f"[green]Added repository: {repo.name}[/green]")
+        if local_path:
+            console.print(f"[green]  Local path: {local_path}[/green]")
 
     except Exception as e:
         console.print(f"[red]Error adding repository: {e}[/red]")

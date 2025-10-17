@@ -9,6 +9,9 @@ repositories:
     build_definition: "Backend-CI"
     description: "Main backend API service"
     enabled: true
+    # Optional: Specify local checkout path
+    # If not provided, the agent will clone to the default location
+    # local_path: /home/user/workspace/backend-api
 
   # Frontend web application
   - name: frontend-web
@@ -17,14 +20,18 @@ repositories:
     build_definition: "Frontend-CI"
     description: "React frontend application"
     enabled: true
+    # Example: Using tilde expansion for home directory
+    # local_path: ~/workspace/frontend-web
 
-  # Shared libraries
+  # Shared libraries (with local path)
   - name: shared-lib
     url: https://dev.azure.com/your-org/your-project/_git/shared-lib
     ado_repo_id: "11111111-2222-3333-4444-555555555555"
     build_definition: "Shared-CI"
     description: "Common utilities and libraries"
     enabled: true
+    # Example: Absolute path to local checkout
+    local_path: /home/developer/projects/shared-lib
 
   # Mobile app (disabled example)
   - name: mobile-app
@@ -33,6 +40,7 @@ repositories:
     build_definition: "Mobile-CI"
     description: "Mobile application"
     enabled: false  # Set to true to enable
+    # local_path: ~/mobile-app
 
 # Component groups for releases
 component_groups:

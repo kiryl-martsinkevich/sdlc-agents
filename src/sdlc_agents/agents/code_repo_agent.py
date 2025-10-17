@@ -68,19 +68,36 @@ You are an expert Java developer with strong Maven and testing skills."""
         self.ado_client = ADOClient()
 
     async def initialize_repo(self) -> bool:
-        """Clone or update the repository."""
+        """
+        Initialize or open the repository.
+
+        If repo_path was provided during initialization (from local_path config),
+        it will use that existing checkout. Otherwise, it will clone to the default location.
+        """
         try:
             if self.repo_path.exists():
-                # Repository exists, open it
+                # Repository exists (either provided local_path or previously cloned)
                 self.repo = Repo(self.repo_path)
                 await self.observe(f"Opened existing repository at {self.repo_path}")
 
-                # Pull latest changes
-                origin = self.repo.remotes.origin
-                origin.pull()
-                logger.info(f"Pulled latest changes for {self.repo_name}")
+                # Only pull if this wasn't explicitly configured as a local path
+                # (to avoid interfering with developer's local work)
+                # Check if repo_path was explicitly set (not default)
+                is_explicit_local = self.repo_path != (settings.repos_dir / self.repo_name)
+
+                if not is_explicit_local:
+                    # This is a managed clone, safe to pull
+                    origin = self.repo.remotes.origin
+                    origin.pull()
+                    logger.info(f"Pulled latest changes for {self.repo_name}")
+                else:
+                    # This is a local checkout configured in repositories.yaml
+                    logger.info(
+                        f"Using local repository at {self.repo_path} "
+                        "(not pulling to preserve local changes)"
+                    )
             else:
-                # Clone repository
+                # Clone repository to default location
                 await self.observe(f"Cloning repository from {self.repo_url}")
                 self.repo = Repo.clone_from(self.repo_url, self.repo_path)
                 logger.info(f"Cloned repository to {self.repo_path}")

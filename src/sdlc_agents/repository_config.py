@@ -15,6 +15,11 @@ class RepositoryConfig(BaseModel):
 
     name: str = Field(description="Repository name/identifier")
     url: str = Field(description="Git repository URL")
+    local_path: Optional[str] = Field(
+        default=None,
+        description="Local filesystem path where repository is checked out. "
+                    "If not provided, agents will use the repository URL for operations."
+    )
     ado_repo_id: Optional[str] = Field(default=None, description="Azure DevOps repository ID")
     build_definition: Optional[str] = Field(
         default=None, description="Build definition name in ADO"
@@ -223,6 +228,24 @@ class RepositoryConfigManager:
         for repo in self.config.repositories:
             if not repo.url.startswith(("http://", "https://", "git@")):
                 errors.append(f"Invalid URL for repository {repo.name}: {repo.url}")
+
+        # Check local paths exist if provided
+        for repo in self.config.repositories:
+            if repo.local_path:
+                local_path = Path(repo.local_path).expanduser()
+                if not local_path.exists():
+                    errors.append(
+                        f"Local path for repository {repo.name} does not exist: {repo.local_path}"
+                    )
+                elif not local_path.is_dir():
+                    errors.append(
+                        f"Local path for repository {repo.name} is not a directory: {repo.local_path}"
+                    )
+                # Check if it's a git repository
+                elif not (local_path / ".git").exists():
+                    logger.warning(
+                        f"Local path for repository {repo.name} does not appear to be a git repository: {repo.local_path}"
+                    )
 
         # Check component groups reference valid repositories
         for group_name, repos in self.config.component_groups.items():
